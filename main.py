@@ -1,3 +1,5 @@
+import json
+
 import folium as folium
 import requests as requests
 import pandas as pd
@@ -48,13 +50,20 @@ def plot_map(data):
         rings = feature['geometry']['rings']
         for ring in rings:
             polygon = [(latlng[1], latlng[0]) for latlng in ring]  # folium expects (lat, lon)
+
+            flurstueck_name = feature['attributes']['flurstuecksnummer_AX_Flurstueck']
+            if feature['attributes']['flurstuecksnummer_AX_Flurstue_1']:
+                flurstueck_name = f"{feature['attributes']['flurstuecksnummer_AX_Flurstueck']}/{feature['attributes']['flurstuecksnummer_AX_Flurstue_1']}"
+
             folium.Polygon(
                 locations=polygon,
                 color='blue',
                 weight=2,
                 fill=True,
                 fill_opacity=0.3,
-                popup=f"ID: {feature['attributes']['OBJECTID']}"
+                popup=f"""<p>Flur: {feature['attributes']['flurnummer']} </br> 
+                          Flurstueck: {flurstueck_name} </br>  
+                          Flaeche: {feature['attributes']['amtlicheFlaeche']/10000} ha  </br></p> """
             ).add_to(m)
 
     # Add layer control
@@ -127,19 +136,22 @@ def plot_map(data):
 
 if __name__ == "__main__":
 
-    df = pd.read_excel(r"C:\Users\phi-j\OneDrive\Dokumente\UmbauAmoeneburg\Hofübergabe\Hofübergabe.xlsx", "Flurstuecke")
+    # df = pd.read_excel(r"C:\Users\phi-j\OneDrive\Dokumente\UmbauAmoeneburg\Hofübergabe\Hofübergabe.xlsx", "Flurstuecke")
+    #
+    # flurstueck_info = []
+    # for _, row in df.iterrows():
+    #     gemarkung = int(row["Gemarkung"])
+    #     flurnummer = int(row["Flur"])
+    #     flurstueck = int(row["Flurstück"])
+    #     flurstueck_nenner = row["Flurstück_Nenner"]
+    #     if pd.isna(flurstueck_nenner):
+    #         flurstueck_nenner = None
+    #     else:
+    #         flurstueck_nenner = int(flurstueck_nenner)
+    #     flurstueck_info.append(find_flurstueck(gemarkung, flurnummer, flurstueck, flurstueck_nenner))
 
-    flurstueck_info = []
-    for _, row in df.iterrows():
-        gemarkung = int(row["Gemarkung"])
-        flurnummer = int(row["Flur"])
-        flurstueck = int(row["Flurstück"])
-        flurstueck_nenner = row["Flurstück_Nenner"]
-        if pd.isna(flurstueck_nenner):
-            flurstueck_nenner = None
-        else:
-            flurstueck_nenner = int(flurstueck_nenner)
-        flurstueck_info.append(find_flurstueck(gemarkung, flurnummer, flurstueck, flurstueck_nenner))
+    with open('data2.json', 'r') as f:
+        flurstueck_info = json.load(f)
 
     plot_map(flurstueck_info)
 
