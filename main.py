@@ -54,16 +54,26 @@ def plot_map(data):
             flurstueck_name = feature['attributes']['flurstuecksnummer_AX_Flurstueck']
             if feature['attributes']['flurstuecksnummer_AX_Flurstue_1']:
                 flurstueck_name = f"{feature['attributes']['flurstuecksnummer_AX_Flurstueck']}/{feature['attributes']['flurstuecksnummer_AX_Flurstue_1']}"
+            color = "purple"
+            if feature["meta"]["type"] == "Acker":
+                color = "red"
+            elif feature["meta"]["type"] == "Wald":
+                color = "blue"
+            elif feature["meta"]["type"] == "Wiese":
+                color = "green"
 
             folium.Polygon(
                 locations=polygon,
-                color='blue',
+                color=color,
                 weight=2,
                 fill=True,
                 fill_opacity=0.3,
-                popup=f"""<p>Flur: {feature['attributes']['flurnummer']} </br> 
+                popup=f"""<p>Gemarkung: {feature['meta']['gemarkung']} </br>
+                          Name: {feature['meta']['name']} </br>
+                          Flur: {feature['attributes']['flurnummer']} </br> 
                           Flurstueck: {flurstueck_name} </br>  
-                          Flaeche: {feature['attributes']['amtlicheFlaeche']/10000} ha  </br></p> """
+                          Flaeche: {feature['attributes']['amtlicheFlaeche']/10000} ha  </br>
+                          Typ: {feature['meta']['type']} </br></p> """
             ).add_to(m)
 
     # Add layer control
@@ -136,20 +146,29 @@ def plot_map(data):
 
 if __name__ == "__main__":
 
-    # df = pd.read_excel(r"C:\Users\phi-j\OneDrive\Dokumente\UmbauAmoeneburg\Hofübergabe\Hofübergabe.xlsx", "Flurstuecke")
-    #
-    # flurstueck_info = []
-    # for _, row in df.iterrows():
-    #     gemarkung = int(row["Gemarkung"])
-    #     flurnummer = int(row["Flur"])
-    #     flurstueck = int(row["Flurstück"])
-    #     flurstueck_nenner = row["Flurstück_Nenner"]
-    #     if pd.isna(flurstueck_nenner):
-    #         flurstueck_nenner = None
-    #     else:
-    #         flurstueck_nenner = int(flurstueck_nenner)
-    #     flurstueck_info.append(find_flurstueck(gemarkung, flurnummer, flurstueck, flurstueck_nenner))
+    df = pd.read_excel(r"C:\Users\phi-j\OneDrive\Dokumente\UmbauAmoeneburg\Hofübergabe\Hofübergabe.xlsx", "Flurstuecke")
 
+    flurstueck_info = []
+    for _, row in df.iterrows():
+        gemarkung = int(row["Gemarkung"])
+        flurnummer = int(row["Flur"])
+        flurstueck = int(row["Flurstück"])
+        flurstueck_nenner = row["Flurstück_Nenner"]
+        if pd.isna(flurstueck_nenner):
+            flurstueck_nenner = None
+        else:
+            flurstueck_nenner = int(flurstueck_nenner)
+
+        one_info = find_flurstueck(gemarkung, flurnummer, flurstueck, flurstueck_nenner)
+
+        if one_info is None:
+            print("debug")
+
+        one_info["meta"] = {"name": row["Name"], "gemarkung": row["Gemarkung"], "type": row["Art"]}
+        flurstueck_info.append(one_info)
+
+    with open('data2.json', 'w') as f:
+        json.dump(flurstueck_info, f)
     with open('data2.json', 'r') as f:
         flurstueck_info = json.load(f)
 
